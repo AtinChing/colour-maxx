@@ -1,65 +1,225 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { GUESSABLE_WORDS, ANSWER_WORDS } from '@/lib/wordlists';
+import {
+  getDailyAnswer,
+  computePar,
+  processGuess,
+  updateKeyboardState,
+  type Tile,
+  type TileState,
+} from '@/lib/game-logic';
+import GameGrid from '@/components/GameGrid';
+import Keyboard from '@/components/Keyboard';
+import EndModal from '@/components/EndModal';
+import Toast from '@/components/Toast';
+
+const MAX_GUESSES = 6;
+const WORD_LENGTH = 5;
+
+type GameState = 'playing' | 'won' | 'lost';
 
 export default function Home() {
+  const [answer, setAnswer] = useState('');
+  const [par, setPar] = useState(0);
+  const [guesses, setGuesses] = useState<Tile[][]>([]);
+  const [currentGuess, setCurrentGuess] = useState('');
+  const [gameState, setGameState] = useState<GameState>('playing');
+  const [score, setScore] = useState(0);
+  const [usedWords, setUsedWords] = useState<Set<string>>(new Set());
+  const [greensSeen, setGreensSeen] = useState<Set<string>>(new Set());
+  const [yellowsSeen, setYellowsSeen] = useState<Set<string>>(new Set());
+  const [keyboardState, setKeyboardState] = useState<Map<string, TileState>>(new Map());
+  const [toast, setToast] = useState<{ message: string; id: number } | null>(null);
+  const [shake, setShake] = useState(false);
+  const [revealingRow, setRevealingRow] = useState(-1);
+
+  // Initialize game
+  useEffect(() => {
+    const dailyAnswer = getDailyAnswer(ANSWER_WORDS);
+    const dailyPar = computePar(dailyAnswer);
+    setAnswer(dailyAnswer);
+    setPar(dailyPar);
+  }, []);
+
+  const showToast = useCallback((message: string) => {
+    const id = Date.now();
+    setToast({ message, id });
+    setTimeout(() => setToast(null), 2000);
+  }, []);
+
+  const triggerShake = useCallback(() => {
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+  }, []);
+
+  const handleKeyPress = useCallback((key: string) => {
+    if (gameState !== 'playing' || revealingRow !== -1) return;
+
+    if (key === 'ENTER') {
+      if (currentGuess.length !== WORD_LENGTH) {
+        showToast('Not enough letters');
+        triggerShake();
+        return;
+      }
+
+      const upperGuess = currentGuess.toUpperCase();
+
+      // Check if word is in guessable list
+      if (!GUESSABLE_WORDS.has(currentGuess.toLowerCase())) {
+        showToast('Not in word list');
+        triggerShake();
+        return;
+      }
+
+      // Check if word already used
+      if (usedWords.has(upperGuess)) {
+        showToast('Already used');
+        triggerShake();
+        return;
+      }
+
+      // Process the guess
+      const result = processGuess(upperGuess, answer, new Set(greensSeen), new Set(yellowsSeen));
+      
+      // Add to used words
+      setUsedWords(prev => new Set([...prev, upperGuess]));
+      
+      // Update greens and yellows seen
+      result.tiles.forEach((tile, i) => {
+        const pairKey = `${tile.letter}-${i}`;
+        if (tile.state === 'green' && tile.scored) {
+          setGreensSeen(prev => new Set([...prev, pairKey]));
+        } else if (tile.state === 'yellow' && tile.scored) {
+          setYellowsSeen(prev => new Set([...prev, pairKey]));
+        }
+      });
+      
+      // Update keyboard state
+      setKeyboardState(prev => updateKeyboardState(result.tiles, prev));
+      
+      // Animate the reveal
+      setRevealingRow(guesses.length);
+      setGuesses(prev => [...prev, result.tiles]);
+      setCurrentGuess('');
+      
+      // Wait for tile flip animation
+      setTimeout(() => {
+        setRevealingRow(-1);
+        
+        // Update score with animation
+        if (result.scoreGained > 0) {
+          setScore(prev => prev + result.scoreGained);
+        }
+        
+        // Check if hit the answer (loss condition)
+        if (result.isAnswer) {
+          setTimeout(() => {
+            setGameState('lost');
+          }, 500);
+          return;
+        }
+        
+        // Check if game over (used all guesses)
+        if (guesses.length + 1 >= MAX_GUESSES) {
+          setTimeout(() => {
+            setGameState('won'); // "won" here means finished without hitting answer
+          }, 500);
+        }
+      }, 2000); // Time for all tiles to flip
+      
+    } else if (key === 'BACKSPACE') {
+      setCurrentGuess(prev => prev.slice(0, -1));
+    } else if (currentGuess.length < WORD_LENGTH && /^[A-Z]$/i.test(key)) {
+      setCurrentGuess(prev => prev + key.toUpperCase());
+    }
+  }, [
+    currentGuess,
+    gameState,
+    answer,
+    usedWords,
+    greensSeen,
+    yellowsSeen,
+    guesses.length,
+    revealingRow,
+    showToast,
+    triggerShake
+  ]);
+
+  // Physical keyboard support
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleKeyPress('ENTER');
+      } else if (e.key === 'Backspace') {
+        handleKeyPress('BACKSPACE');
+      } else if (/^[a-zA-Z]$/.test(e.key)) {
+        handleKeyPress(e.key.toUpperCase());
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyPress]);
+
+  const turnsRemaining = MAX_GUESSES - guesses.length;
+  const percent = par > 0 ? Math.round((score / par) * 100) : 0;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-white dark:bg-[#121213] flex flex-col items-center justify-between py-4 px-2 transition-colors">
+      {/* Header */}
+      <div className="w-full max-w-md">
+        <div className="text-center border-b border-gray-300 dark:border-gray-700 pb-3 mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-wide">
+            COLOUR MAXX EDITION
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            Grab as much colour as you can in 6 guesses, but never type the answer.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Stats bar */}
+        <div className="flex justify-between items-center mb-4 px-2">
+          <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            Colour: <span className="text-green-600 dark:text-green-500">{score}</span>
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {turnsRemaining} {turnsRemaining === 1 ? 'turn' : 'turns'} left
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Game grid */}
+      <div className="flex-1 flex items-center justify-center w-full">
+        <GameGrid
+          guesses={guesses}
+          currentGuess={currentGuess}
+          maxGuesses={MAX_GUESSES}
+          shake={shake}
+          revealingRow={revealingRow}
+        />
+      </div>
+
+      {/* Keyboard */}
+      <div className="w-full max-w-lg">
+        <Keyboard onKeyPress={handleKeyPress} keyboardState={keyboardState} />
+      </div>
+
+      {/* Toast notifications */}
+      {toast && <Toast message={toast.message} />}
+
+      {/* End modal */}
+      {gameState !== 'playing' && (
+        <EndModal
+          gameState={gameState}
+          score={score}
+          par={par}
+          percent={percent}
+          answer={answer}
+          guesses={guesses}
+        />
+      )}
     </div>
   );
 }

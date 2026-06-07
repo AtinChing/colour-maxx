@@ -24,3 +24,119 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Tile flip animation */
+@keyframes flip {
+  0% {
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+.tile-flip {
+  animation: flip 600ms ease-in-out;
+  animation-fill-mode: backwards;
+  animation-delay: inherit;
+}
+
+.tile-flip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--tile-bg);
+  animation: flip-color 600ms ease-in-out;
+  animation-fill-mode: backwards;
+  animation-delay: inherit;
+  z-index: -1;
+}
+
+@keyframes flip-color {
+  0%, 49.99% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Row shake animation for invalid input */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: shake 500ms ease-in-out;
+}
+
+/* Letter pop animation when typing */
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-pop {
+  animation: pop 100ms ease-in-out;
+}
+
+/* Toast slide in/out */
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toast-out {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+}
+
+.animate-toast {
+  animation: toast-in 200ms ease-out, toast-out 200ms ease-in 1800ms;
+}
+
+/* Score indicator ping */
+@keyframes ping-once {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping-once {
+  animation: ping-once 600ms ease-out;
+}

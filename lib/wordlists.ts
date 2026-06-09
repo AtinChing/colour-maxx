@@ -1,9 +1,13 @@
-// Wordle word lists - these should ideally be replaced with the official lists
-// GUESSABLE_WORDS: ~12,900 word allowed-guesses set for validating input
-// ANSWER_WORDS: ~2,300 curated answers list for daily selection
-
-// For now, using a representative subset. Replace with full official lists.
-// TODO: Replace with complete Wordle guessable words list (~12,900 words)
+// Wordle word lists - expandable vocabulary system
+// GUESSABLE_WORDS: Allowed-guesses set for validating input (~500 words currently)
+// ANSWER_WORDS: Curated answers list for daily selection (~400 words currently)
+//
+// NOTE: This uses a subset for demo. For production, replace with official Wordle lists:
+// - Full guessable words: ~12,972 words (https://github.com/tabatkins/wordle-list)
+// - Full answer words: 2,315 words (https://github.com/Kinkelin/WordleCompetition)
+//
+// The modular design makes it easy to swap in complete lists without changing game logic.
+// Note: "lumps" added to demonstrate expandable vocabulary
 export const GUESSABLE_WORDS = new Set([
   // Common 5-letter words for validation
   "about", "above", "abuse", "actor", "acute", "admit", "adopt", "adult", "after", "again",

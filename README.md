@@ -120,13 +120,15 @@ colour-maxx/
 
 ## Customization
 
-### Changing Word Lists
+### Word Lists
 
-Edit `lib/wordlists.ts`:
-- `GUESSABLE_WORDS` - Set of allowed guesses (~12,900 words)
-- `ANSWER_WORDS` - Array of possible daily answers (~2,300 words)
+The game uses official Wordle word lists:
+- `GUESSABLE_WORDS` - 12,972 valid guesses (complete)
+- `ANSWER_WORDS` - 2,315 possible daily answers (complete)
 
-Replace with official Wordle word lists for authentic experience.
+Lists are loaded from:
+- `lib/words-guessable.ts` - Full dictionary
+- `lib/words-answers.ts` - Curated answers
 
 ### Adjusting Game Constants
 

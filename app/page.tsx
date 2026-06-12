@@ -13,6 +13,7 @@ import {
 import GameGrid from '@/components/GameGrid';
 import Keyboard from '@/components/Keyboard';
 import EndModal from '@/components/EndModal';
+import RulesModal from '@/components/RulesModal';
 import Toast from '@/components/Toast';
 
 const MAX_GUESSES = 6;
@@ -34,6 +35,7 @@ export default function Home() {
   const [toast, setToast] = useState<{ message: string; id: number } | null>(null);
   const [shake, setShake] = useState(false);
   const [revealingRow, setRevealingRow] = useState(-1);
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
 
   // Initialize game
   useEffect(() => {
@@ -170,13 +172,36 @@ export default function Home() {
     <div className="min-h-screen bg-white dark:bg-[#121213] flex flex-col items-center justify-between py-4 px-2 transition-colors">
       {/* Header */}
       <div className="w-full max-w-md">
-        <div className="text-center border-b border-gray-300 dark:border-gray-700 pb-3 mb-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-wide">
-            COLOUR MAXX EDITION
-          </h1>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-            Grab as much colour as you can in 6 guesses, but never type the answer.
-          </p>
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => setRulesModalOpen(true)}
+            className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 p-2"
+            aria-label="How to play"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </button>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-wide">
+              COLOUR MAXX EDITION
+            </h1>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              Grab as much colour as you can in 6 guesses, but never type the answer.
+            </p>
+          </div>
+          <div className="w-10"></div> {/* Spacer for symmetry */}
         </div>
 
         {/* Stats bar */}
@@ -220,6 +245,12 @@ export default function Home() {
           guesses={guesses}
         />
       )}
+
+      {/* Rules modal */}
+      <RulesModal
+        isOpen={rulesModalOpen}
+        onClose={() => setRulesModalOpen(false)}
+      />
     </div>
   );
 }

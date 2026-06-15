@@ -10,6 +10,15 @@ import {
   type Tile,
   type TileState,
 } from '@/lib/game-logic';
+import {
+  EMPTY_STATS,
+  getDailyKey,
+  loadLocalStats,
+  loadPersistedGame,
+  recordCompletedGame,
+  savePersistedGame,
+  type LocalStats,
+} from '@/lib/storage';
 import GameGrid from '@/components/GameGrid';
 import Keyboard from '@/components/Keyboard';
 import EndModal from '@/components/EndModal';
@@ -22,6 +31,7 @@ const WORD_LENGTH = 5;
 type GameState = 'playing' | 'won' | 'lost';
 
 export default function Home() {
+  const [dailyKey, setDailyKey] = useState<number | null>(null);
   const [answer, setAnswer] = useState('');
   const [par, setPar] = useState(0);
   const [guesses, setGuesses] = useState<Tile[][]>([]);
@@ -36,14 +46,81 @@ export default function Home() {
   const [shake, setShake] = useState(false);
   const [revealingRow, setRevealingRow] = useState(-1);
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
+  const [stats, setStats] = useState<LocalStats>(EMPTY_STATS);
+  const [hasLoadedSavedGame, setHasLoadedSavedGame] = useState(false);
 
   // Initialize game
   useEffect(() => {
-    const dailyAnswer = getDailyAnswer(ANSWER_WORDS);
-    const dailyPar = computePar(dailyAnswer);
-    setAnswer(dailyAnswer);
-    setPar(dailyPar);
+    const timer = window.setTimeout(() => {
+      const key = getDailyKey();
+      const dailyAnswer = getDailyAnswer(ANSWER_WORDS);
+      const dailyPar = computePar(dailyAnswer);
+      const savedGame = loadPersistedGame(key);
+
+      setDailyKey(key);
+      setAnswer(dailyAnswer);
+      setPar(dailyPar);
+
+      if (savedGame && savedGame.answer === dailyAnswer) {
+        setGuesses(savedGame.guesses);
+        setCurrentGuess(savedGame.currentGuess);
+        setGameState(savedGame.gameState);
+        setScore(savedGame.score);
+        setUsedWords(new Set(savedGame.usedWords));
+        setGreensSeen(new Set(savedGame.greensSeen));
+        setYellowsSeen(new Set(savedGame.yellowsSeen));
+        setKeyboardState(new Map(savedGame.keyboardState));
+      }
+
+      setStats(loadLocalStats());
+      setHasLoadedSavedGame(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
+
+  // Persist today's game whenever the durable state changes.
+  useEffect(() => {
+    if (!hasLoadedSavedGame || dailyKey === null || !answer) return;
+
+    savePersistedGame({
+      dailyKey,
+      answer,
+      par,
+      guesses,
+      currentGuess,
+      gameState,
+      score,
+      usedWords: Array.from(usedWords),
+      greensSeen: Array.from(greensSeen),
+      yellowsSeen: Array.from(yellowsSeen),
+      keyboardState: Array.from(keyboardState.entries()),
+    });
+  }, [
+    answer,
+    currentGuess,
+    dailyKey,
+    gameState,
+    greensSeen,
+    guesses,
+    hasLoadedSavedGame,
+    keyboardState,
+    par,
+    score,
+    usedWords,
+    yellowsSeen,
+  ]);
+
+  // Count a completed daily game once, even if the page is refreshed afterward.
+  useEffect(() => {
+    if (!hasLoadedSavedGame || dailyKey === null || gameState === 'playing') return;
+
+    const timer = window.setTimeout(() => {
+      setStats(prev => recordCompletedGame(prev, dailyKey, gameState, score));
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [dailyKey, gameState, hasLoadedSavedGame, score]);
 
   const showToast = useCallback((message: string) => {
     const id = Date.now();
@@ -243,6 +320,7 @@ export default function Home() {
           percent={percent}
           answer={answer}
           guesses={guesses}
+          stats={stats}
         />
       )}
 

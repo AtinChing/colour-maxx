@@ -1,4 +1,5 @@
 import { type Tile } from '@/lib/game-logic';
+import { type LocalStats } from '@/lib/storage';
 import { useState } from 'react';
 
 interface EndModalProps {
@@ -8,6 +9,7 @@ interface EndModalProps {
   percent: number;
   answer: string;
   guesses: Tile[][];
+  stats: LocalStats;
 }
 
 export default function EndModal({
@@ -17,6 +19,7 @@ export default function EndModal({
   percent,
   answer,
   guesses,
+  stats,
 }: EndModalProps) {
   const [copied, setCopied] = useState(false);
 
@@ -62,6 +65,9 @@ export default function EndModal({
   };
 
   const isLoss = gameState === 'lost';
+  const averageScore = stats.gamesPlayed > 0
+    ? Math.round(stats.totalScore / stats.gamesPlayed)
+    : 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -121,6 +127,52 @@ export default function EndModal({
           <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-wider">
             {answer}
           </p>
+        </div>
+
+        {/* Local stats */}
+        <div className="border-b border-gray-300 dark:border-gray-700 pb-4 mb-4">
+          <div className="grid grid-cols-5 gap-2 text-center">
+            <div>
+              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {stats.gamesPlayed}
+              </div>
+              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                Played
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {stats.gamesWon}
+              </div>
+              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                Avoided
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {stats.currentStreak}
+              </div>
+              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                Streak
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {stats.bestStreak}
+              </div>
+              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                Best
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {averageScore}
+              </div>
+              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                Avg
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Grid recap */}

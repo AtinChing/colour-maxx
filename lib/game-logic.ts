@@ -58,46 +58,14 @@ export function computePar(answer: string): number {
   
   let par = 0;
   
-  // For each position, count possible greens and yellows
   for (let pos = 0; pos < 5; pos++) {
-    const letter = letters[pos];
-    
-    // Green at this position: 2 points
-    par += 2;
-    
-    // Yellows: this letter appearing at other positions
-    // Each distinct (letter, other-position) pair scores 1
-    const count = letterCounts.get(letter) || 1;
-    
-    // Can appear as yellow in (5 - 1) other positions, but capped by letter count
-    // If letter appears once, can be yellow in up to 4 other positions (but need to reveal it's there)
-    // If letter appears multiple times, each occurrence can be yellow elsewhere
-    for (let otherPos = 0; otherPos < 5; otherPos++) {
-      if (otherPos !== pos) {
-        // Each wrong position for this letter is a potential yellow
-        // But limited by how many of this letter exist
-        // For simplicity: each (letter, position) pair not at its green position
-        par += 1;
-      }
-    }
-  }
-  
-  // The above overcounts for duplicate letters. Refine:
-  // Actually, let's recalculate more carefully.
-  
-  par = 0;
-  const processedLetters = new Set<string>();
-  
-  for (let pos = 0; pos < 5; pos++) {
-    const letter = letters[pos];
-    
     // Green at this position
     par += 2;
   }
   
   // Now count all possible yellows
   // For each letter in the answer, it can appear as yellow in positions where it's not green
-  for (const [letter, count] of letterCounts.entries()) {
+  for (const letter of letterCounts.keys()) {
     // Find where this letter is green
     const greenPositions = letters
       .map((l, i) => l === letter ? i : -1)

@@ -1,4 +1,5 @@
 import { type Tile } from '@/lib/game-logic';
+import { type CSSProperties } from 'react';
 
 const WORD_LENGTH = 5;
 
@@ -96,21 +97,17 @@ function TileComponent({
         return 'bg-white dark:bg-[#121213] border-gray-300 dark:border-gray-700';
     }
   };
+  const revealStyle = {
+    animationDelay: `${revealDelay}ms`,
+    '--tile-bg': tile.state === 'green' ? '#6aaa64' : tile.state === 'yellow' ? '#c9b458' : '#787c7e',
+  } as CSSProperties & Record<'--tile-bg', string>;
 
   return (
     <div
       className={`w-[62px] h-[62px] border-2 flex items-center justify-center text-2xl font-bold uppercase text-white relative ${
         isRevealing ? 'tile-flip' : getBackgroundColor()
       }`}
-      style={
-        isRevealing
-          ? {
-              animationDelay: `${revealDelay}ms`,
-              // @ts-ignore
-              '--tile-bg': tile.state === 'green' ? '#6aaa64' : tile.state === 'yellow' ? '#c9b458' : '#787c7e',
-            }
-          : {}
-      }
+      style={isRevealing ? revealStyle : undefined}
     >
       {tile.letter}
       {/* Score indicator for scored tiles */}

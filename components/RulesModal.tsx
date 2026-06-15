@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 interface RulesModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -131,7 +129,7 @@ export default function RulesModal({ isOpen, onClose }: RulesModalProps) {
             onClick={onClose}
             className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded transition-colors"
           >
-            Got it, let's play!
+            Got it, let&apos;s play!
           </button>
         </div>
       </div>

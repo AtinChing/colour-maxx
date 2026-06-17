@@ -20,6 +20,12 @@ A Wordle spinoff game where you maximize colour score across 6 guesses while avo
 
 Your goal: maximize colour points while never assembling the complete answer.
 
+## Game Modes
+
+- **Daily** - The shared daily puzzle. Progress, score, keyboard state, and completion result are saved locally.
+- **Archive** - Pick a previous date and play that day's deterministic answer. Each archive date resumes independently.
+- **Practice** - Start a fresh random practice game any time. Practice games are seeded and saved as their own sessions while active.
+
 ## Tech Stack
 
 - **Next.js 16** - React framework with App Router
@@ -54,12 +60,6 @@ npm run build
 npm start
 ```
 
-Or export as static site:
-```bash
-npm run build
-npm run export
-```
-
 ## Project Structure
 
 ```
@@ -75,6 +75,7 @@ colour-maxx/
 │   └── Toast.tsx          # Toast notifications
 └── lib/
     ├── game-logic.ts      # Core game logic and scoring engine
+    ├── storage.ts         # localStorage sessions and daily stats
     └── wordlists.ts       # Guessable words and answers lists
 ```
 
@@ -111,6 +112,12 @@ colour-maxx/
 - Same answer for all players on same date
 - Seeded from epoch days
 
+✅ **Game Modes & Persistence**
+- Daily, archive, and practice modes
+- Saved in-progress boards per session
+- Daily stats and streak tracking in localStorage
+- End screen offers a new practice game after completion
+
 ✅ **User Experience**
 - Physical keyboard support
 - On-screen keyboard with state colours
@@ -140,7 +147,7 @@ In `app/page.tsx`:
 
 The PAR computation is in `lib/game-logic.ts` in the `computePar()` function. The current implementation provides an upper-bound ceiling. See inline comments for details on the algorithm and future optimization opportunities.
 
-## What Was Explicitly Deferred
+## What Is Still Deferred
 
 The following features are intentionally omitted from v1 but designed to be easy additions:
 
@@ -148,9 +155,9 @@ The following features are intentionally omitted from v1 but designed to be easy
 
 2. **Global Percentile/Leaderboard** - No fake distribution data. Real comparison requires a backend to collect scores.
 
-3. **Streak Persistence** - No localStorage or session tracking yet. Game state resets on page reload. Hooks are commented in code for future implementation.
+3. **Formal Test Runner** - Core logic has inline assertions and the app passes build/lint, but there is not yet a Vitest/Jest suite.
 
-4. **Full Official Word Lists** - Using representative subset. Replace with complete Wordle word lists (commented in `wordlists.ts`).
+4. **Offline/PWA Support** - The app runs client-side after load, but it is not packaged as an installable offline app.
 
 ## Code Quality Notes
 

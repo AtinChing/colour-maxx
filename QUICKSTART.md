@@ -50,6 +50,15 @@ Maximize your colour score across 6 guesses while avoiding the answer.
 - **Type** on your keyboard (or use on-screen keyboard)
 - **Enter** to submit a guess
 - **Backspace** to delete a letter
+- **Daily** to return to today's shared puzzle
+- **New Practice** to start a fresh practice puzzle
+- **Archive** with a date picker to replay a previous day
+
+## Modes
+
+- **Daily:** shared answer for everyone on the same date. Your board, score, and result resume after refresh.
+- **Archive:** selected dates use the same deterministic answer every time and resume separately.
+- **Practice:** starts a fresh seeded game whenever you want another round.
 
 ## Your Score
 

@@ -1,5 +1,5 @@
 import { type Tile } from '@/lib/game-logic';
-import { type LocalStats } from '@/lib/storage';
+import { type GameSession, type LocalStats } from '@/lib/storage';
 import { useState } from 'react';
 
 interface EndModalProps {
@@ -10,6 +10,8 @@ interface EndModalProps {
   answer: string;
   guesses: Tile[][];
   stats: LocalStats;
+  session: GameSession | null;
+  onNewPractice: () => void;
 }
 
 export default function EndModal({
@@ -20,18 +22,17 @@ export default function EndModal({
   answer,
   guesses,
   stats,
+  session,
+  onNewPractice,
 }: EndModalProps) {
   const [copied, setCopied] = useState(false);
 
   const generateShareText = () => {
-    const today = new Date();
-    const dateStr = today.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    const label = session?.mode === 'practice'
+      ? 'Practice'
+      : session?.label ?? 'Daily';
 
-    let text = `Colour Maxx Edition - ${dateStr}\n`;
+    let text = `Colour Maxx Edition - ${label}\n`;
     text += `Colour: ${score}/${par} (${percent}%)\n\n`;
 
     // Generate emoji grid
@@ -65,6 +66,7 @@ export default function EndModal({
   };
 
   const isLoss = gameState === 'lost';
+  const isDaily = session?.mode === 'daily';
   const averageScore = stats.gamesPlayed > 0
     ? Math.round(stats.totalScore / stats.gamesPlayed)
     : 0;
@@ -130,50 +132,52 @@ export default function EndModal({
         </div>
 
         {/* Local stats */}
-        <div className="border-b border-gray-300 dark:border-gray-700 pb-4 mb-4">
-          <div className="grid grid-cols-5 gap-2 text-center">
-            <div>
-              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {stats.gamesPlayed}
+        {isDaily && (
+          <div className="border-b border-gray-300 dark:border-gray-700 pb-4 mb-4">
+            <div className="grid grid-cols-5 gap-2 text-center">
+              <div>
+                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {stats.gamesPlayed}
+                </div>
+                <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Played
+                </div>
               </div>
-              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                Played
+              <div>
+                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {stats.gamesWon}
+                </div>
+                <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Avoided
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {stats.gamesWon}
+              <div>
+                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {stats.currentStreak}
+                </div>
+                <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Streak
+                </div>
               </div>
-              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                Avoided
+              <div>
+                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {stats.bestStreak}
+                </div>
+                <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Best
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {stats.currentStreak}
-              </div>
-              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                Streak
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {stats.bestStreak}
-              </div>
-              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                Best
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {averageScore}
-              </div>
-              <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                Avg
+              <div>
+                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {averageScore}
+                </div>
+                <div className="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Avg
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Grid recap */}
         <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-900 rounded">
@@ -205,12 +209,12 @@ export default function EndModal({
           {copied ? 'Copied!' : 'Copy Results'}
         </button>
 
-        {/* Reload button */}
+        {/* Next game button */}
         <button
-          onClick={() => window.location.reload()}
+          onClick={onNewPractice}
           className="w-full mt-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-bold py-3 px-4 rounded transition-colors"
         >
-          Play Again Tomorrow
+          New Practice
         </button>
       </div>
     </div>

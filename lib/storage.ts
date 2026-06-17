@@ -2,12 +2,24 @@ import { type Tile, type TileState } from './game-logic';
 
 const GAME_STORAGE_PREFIX = 'colour-maxx:game';
 const STATS_STORAGE_KEY = 'colour-maxx:stats';
+const ACTIVE_SESSION_STORAGE_KEY = 'colour-maxx:active-session';
 const STORAGE_VERSION = 1;
 
 export type PersistedGameState = 'playing' | 'won' | 'lost';
+export type GameMode = 'daily' | 'archive' | 'practice';
+
+export interface GameSession {
+  mode: GameMode;
+  gameId: string;
+  label: string;
+  dailyKey: number;
+}
 
 export interface PersistedGame {
   version: number;
+  gameId: string;
+  mode: GameMode;
+  label: string;
   dailyKey: number;
   answer: string;
   par: number;
@@ -52,15 +64,94 @@ export function getDailyKey(date: Date = new Date()): number {
   return Math.floor(date.getTime() / 86400000);
 }
 
-export function loadPersistedGame(dailyKey: number): PersistedGame | null {
+export function getDateInputValue(date: Date = new Date()): string {
+  return date.toISOString().slice(0, 10);
+}
+
+export function getDateLabel(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+export function getDateFromDailyKey(dailyKey: number): Date {
+  return new Date(dailyKey * 86400000);
+}
+
+export function createDailySession(date: Date = new Date()): GameSession {
+  const dailyKey = getDailyKey(date);
+
+  return {
+    mode: 'daily',
+    gameId: `daily:${dailyKey}`,
+    label: 'Daily',
+    dailyKey,
+  };
+}
+
+export function createArchiveSession(dateValue: string): GameSession {
+  const date = parseDateInputValue(dateValue);
+  const dailyKey = getDailyKey(date);
+
+  return {
+    mode: 'archive',
+    gameId: `archive:${dailyKey}`,
+    label: getDateLabel(date),
+    dailyKey,
+  };
+}
+
+export function createPracticeSession(date: Date = new Date()): GameSession {
+  const dailyKey = getDailyKey(date);
+  const token = `${dailyKey}-${date.getTime()}`;
+
+  return {
+    mode: 'practice',
+    gameId: `practice:${token}`,
+    label: 'Practice',
+    dailyKey,
+  };
+}
+
+export function getAnswerForSession(answerWords: string[], session: GameSession): string {
+  if (session.mode === 'practice') {
+    const index = hashString(session.gameId) % answerWords.length;
+    return answerWords[index].toUpperCase();
+  }
+
+  return answerWords[session.dailyKey % answerWords.length].toUpperCase();
+}
+
+export function loadActiveSession(): GameSession | null {
   if (typeof window === 'undefined') return null;
 
-  const raw = window.localStorage.getItem(getGameStorageKey(dailyKey));
+  const raw = window.localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<GameSession>;
+    return isGameSession(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveActiveSession(session: GameSession): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, JSON.stringify(session));
+}
+
+export function loadPersistedGame(session: GameSession): PersistedGame | null {
+  if (typeof window === 'undefined') return null;
+
+  const raw = window.localStorage.getItem(getGameStorageKey(session.gameId));
   if (!raw) return null;
 
   try {
     const parsed = JSON.parse(raw) as Partial<PersistedGame>;
-    return isPersistedGame(parsed, dailyKey) ? parsed : null;
+    return isPersistedGame(parsed, session) ? parsed : null;
   } catch {
     return null;
   }
@@ -75,7 +166,7 @@ export function savePersistedGame(game: Omit<PersistedGame, 'version' | 'savedAt
     savedAt: new Date().toISOString(),
   };
 
-  window.localStorage.setItem(getGameStorageKey(game.dailyKey), JSON.stringify(payload));
+  window.localStorage.setItem(getGameStorageKey(game.gameId), JSON.stringify(payload));
 }
 
 export function loadLocalStats(): LocalStats {
@@ -132,14 +223,17 @@ function saveLocalStats(stats: LocalStats): void {
   window.localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(stats));
 }
 
-function getGameStorageKey(dailyKey: number): string {
-  return `${GAME_STORAGE_PREFIX}:${dailyKey}`;
+function getGameStorageKey(gameId: string): string {
+  return `${GAME_STORAGE_PREFIX}:${gameId}`;
 }
 
-function isPersistedGame(value: Partial<PersistedGame>, dailyKey: number): value is PersistedGame {
+function isPersistedGame(value: Partial<PersistedGame>, session: GameSession): value is PersistedGame {
   return (
     value.version === STORAGE_VERSION &&
-    value.dailyKey === dailyKey &&
+    value.gameId === session.gameId &&
+    value.mode === session.mode &&
+    typeof value.label === 'string' &&
+    value.dailyKey === session.dailyKey &&
     typeof value.answer === 'string' &&
     typeof value.par === 'number' &&
     Array.isArray(value.guesses) &&
@@ -171,4 +265,32 @@ function isLocalStats(value: Partial<LocalStats>): value is LocalStats {
 
 function isGameState(value: unknown): value is PersistedGameState {
   return value === 'playing' || value === 'won' || value === 'lost';
+}
+
+function isGameMode(value: unknown): value is GameMode {
+  return value === 'daily' || value === 'archive' || value === 'practice';
+}
+
+function isGameSession(value: Partial<GameSession>): value is GameSession {
+  return (
+    isGameMode(value.mode) &&
+    typeof value.gameId === 'string' &&
+    typeof value.label === 'string' &&
+    typeof value.dailyKey === 'number'
+  );
+}
+
+function parseDateInputValue(dateValue: string): Date {
+  const [year, month, day] = dateValue.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function hashString(value: string): number {
+  let hash = 0;
+
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+
+  return hash;
 }

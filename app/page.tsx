@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GUESSABLE_WORDS, ANSWER_WORDS } from '@/lib/wordlists';
 import {
-  getDailyAnswer,
   computePar,
   processGuess,
   updateKeyboardState,
@@ -12,11 +11,19 @@ import {
 } from '@/lib/game-logic';
 import {
   EMPTY_STATS,
-  getDailyKey,
+  createArchiveSession,
+  createDailySession,
+  createPracticeSession,
+  getAnswerForSession,
+  getDateInputValue,
+  getDateFromDailyKey,
   loadLocalStats,
+  loadActiveSession,
   loadPersistedGame,
   recordCompletedGame,
+  saveActiveSession,
   savePersistedGame,
+  type GameSession,
   type LocalStats,
 } from '@/lib/storage';
 import GameGrid from '@/components/GameGrid';
@@ -31,7 +38,7 @@ const WORD_LENGTH = 5;
 type GameState = 'playing' | 'won' | 'lost';
 
 export default function Home() {
-  const [dailyKey, setDailyKey] = useState<number | null>(null);
+  const [session, setSession] = useState<GameSession | null>(null);
   const [answer, setAnswer] = useState('');
   const [par, setPar] = useState(0);
   const [guesses, setGuesses] = useState<Tile[][]>([]);
@@ -48,43 +55,67 @@ export default function Home() {
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const [stats, setStats] = useState<LocalStats>(EMPTY_STATS);
   const [hasLoadedSavedGame, setHasLoadedSavedGame] = useState(false);
+  const [archiveDate, setArchiveDate] = useState(getDateInputValue());
+
+  const applySession = useCallback((nextSession: GameSession, useSavedGame = true) => {
+    const nextAnswer = getAnswerForSession(ANSWER_WORDS, nextSession);
+    const nextPar = computePar(nextAnswer);
+    const savedGame = useSavedGame ? loadPersistedGame(nextSession) : null;
+
+    saveActiveSession(nextSession);
+    setSession(nextSession);
+    setAnswer(nextAnswer);
+    setPar(nextPar);
+    setRevealingRow(-1);
+    setShake(false);
+    setToast(null);
+
+    if (nextSession.mode !== 'practice') {
+      setArchiveDate(getDateInputValue(getDateFromDailyKey(nextSession.dailyKey)));
+    }
+
+    if (savedGame && savedGame.answer === nextAnswer) {
+      setGuesses(savedGame.guesses);
+      setCurrentGuess(savedGame.currentGuess);
+      setGameState(savedGame.gameState);
+      setScore(savedGame.score);
+      setUsedWords(new Set(savedGame.usedWords));
+      setGreensSeen(new Set(savedGame.greensSeen));
+      setYellowsSeen(new Set(savedGame.yellowsSeen));
+      setKeyboardState(new Map(savedGame.keyboardState));
+      return;
+    }
+
+    setGuesses([]);
+    setCurrentGuess('');
+    setGameState('playing');
+    setScore(0);
+    setUsedWords(new Set());
+    setGreensSeen(new Set());
+    setYellowsSeen(new Set());
+    setKeyboardState(new Map());
+  }, []);
 
   // Initialize game
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const key = getDailyKey();
-      const dailyAnswer = getDailyAnswer(ANSWER_WORDS);
-      const dailyPar = computePar(dailyAnswer);
-      const savedGame = loadPersistedGame(key);
-
-      setDailyKey(key);
-      setAnswer(dailyAnswer);
-      setPar(dailyPar);
-
-      if (savedGame && savedGame.answer === dailyAnswer) {
-        setGuesses(savedGame.guesses);
-        setCurrentGuess(savedGame.currentGuess);
-        setGameState(savedGame.gameState);
-        setScore(savedGame.score);
-        setUsedWords(new Set(savedGame.usedWords));
-        setGreensSeen(new Set(savedGame.greensSeen));
-        setYellowsSeen(new Set(savedGame.yellowsSeen));
-        setKeyboardState(new Map(savedGame.keyboardState));
-      }
-
+      applySession(loadActiveSession() ?? createDailySession());
       setStats(loadLocalStats());
       setHasLoadedSavedGame(true);
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [applySession]);
 
   // Persist today's game whenever the durable state changes.
   useEffect(() => {
-    if (!hasLoadedSavedGame || dailyKey === null || !answer) return;
+    if (!hasLoadedSavedGame || session === null || !answer) return;
 
     savePersistedGame({
-      dailyKey,
+      gameId: session.gameId,
+      mode: session.mode,
+      label: session.label,
+      dailyKey: session.dailyKey,
       answer,
       par,
       guesses,
@@ -99,7 +130,6 @@ export default function Home() {
   }, [
     answer,
     currentGuess,
-    dailyKey,
     gameState,
     greensSeen,
     guesses,
@@ -107,20 +137,21 @@ export default function Home() {
     keyboardState,
     par,
     score,
+    session,
     usedWords,
     yellowsSeen,
   ]);
 
   // Count a completed daily game once, even if the page is refreshed afterward.
   useEffect(() => {
-    if (!hasLoadedSavedGame || dailyKey === null || gameState === 'playing') return;
+    if (!hasLoadedSavedGame || session === null || session.mode !== 'daily' || gameState === 'playing') return;
 
     const timer = window.setTimeout(() => {
-      setStats(prev => recordCompletedGame(prev, dailyKey, gameState, score));
+      setStats(prev => recordCompletedGame(prev, session.dailyKey, gameState, score));
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [dailyKey, gameState, hasLoadedSavedGame, score]);
+  }, [gameState, hasLoadedSavedGame, score, session]);
 
   const showToast = useCallback((message: string) => {
     const id = Date.now();
@@ -244,6 +275,11 @@ export default function Home() {
 
   const turnsRemaining = MAX_GUESSES - guesses.length;
   const percent = par > 0 ? Math.round((score / par) * 100) : 0;
+  const maxArchiveDate = getDateInputValue();
+
+  const startDaily = () => applySession(createDailySession());
+  const startPractice = () => applySession(createPracticeSession(), false);
+  const startArchive = () => applySession(createArchiveSession(archiveDate));
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#121213] flex flex-col items-center justify-between py-4 px-2 transition-colors">
@@ -281,13 +317,59 @@ export default function Home() {
           <div className="w-10"></div> {/* Spacer for symmetry */}
         </div>
 
+        {/* Mode controls */}
+        <div className="flex flex-col gap-2 mb-4">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={startDaily}
+              className={`h-10 rounded font-bold text-sm border-2 transition-colors ${
+                session?.mode === 'daily'
+                  ? 'bg-[#6aaa64] border-[#6aaa64] text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+              }`}
+            >
+              Daily
+            </button>
+            <button
+              onClick={startPractice}
+              className={`h-10 rounded font-bold text-sm border-2 transition-colors ${
+                session?.mode === 'practice'
+                  ? 'bg-[#6aaa64] border-[#6aaa64] text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+              }`}
+            >
+              New Practice
+            </button>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <input
+              type="date"
+              value={archiveDate}
+              max={maxArchiveDate}
+              onChange={(event) => setArchiveDate(event.target.value)}
+              className="h-10 rounded border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm font-bold text-gray-900 dark:text-gray-100"
+              aria-label="Archive date"
+            />
+            <button
+              onClick={startArchive}
+              className={`h-10 px-4 rounded font-bold text-sm border-2 transition-colors ${
+                session?.mode === 'archive'
+                  ? 'bg-[#6aaa64] border-[#6aaa64] text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+              }`}
+            >
+              Archive
+            </button>
+          </div>
+        </div>
+
         {/* Stats bar */}
         <div className="flex justify-between items-center mb-4 px-2">
           <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
             Colour: <span className="text-green-600 dark:text-green-500">{score}</span>
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            {turnsRemaining} {turnsRemaining === 1 ? 'turn' : 'turns'} left
+            {session?.label ?? 'Daily'} | {turnsRemaining} {turnsRemaining === 1 ? 'turn' : 'turns'} left
           </div>
         </div>
       </div>
@@ -321,6 +403,8 @@ export default function Home() {
           answer={answer}
           guesses={guesses}
           stats={stats}
+          session={session}
+          onNewPractice={startPractice}
         />
       )}
 

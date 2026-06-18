@@ -12,17 +12,14 @@ Open http://localhost:3000
 
 ## Production Build
 
-### Option 1: Static Export (Recommended for hosting on any static server)
+### Option 1: Production Server
 
 ```bash
 npm run build
-```
-
-This creates an optimized production build in `.next/` directory that can be served with:
-
-```bash
 npm start
 ```
+
+This creates an optimized production build in `.next/` and serves it with Next.js.
 
 ### Option 2: Deploy to Vercel (One-Click)
 
@@ -38,7 +35,7 @@ The easiest way to deploy this Next.js app:
 npm run build
 ```
 
-Then deploy the `.next` directory.
+Use Netlify's Next.js support so the framework build output is handled correctly.
 
 ### Option 4: Static HTML Export
 
@@ -79,11 +76,10 @@ None required! The game runs entirely client-side with no backend dependencies.
 
 ## Customization for Production
 
-1. **Replace Word Lists**: Update `lib/wordlists.ts` with complete Wordle word lists
-2. **Analytics**: Add your analytics script to `app/layout.tsx`
-3. **SEO**: Update metadata in `app/layout.tsx`
-4. **Favicon**: Replace `app/favicon.ico`
-5. **Open Graph**: Add OG image for social sharing
+1. **Analytics**: Add your analytics script to `app/layout.tsx`
+2. **SEO**: Update metadata in `app/layout.tsx`
+3. **Favicon**: Replace `app/favicon.ico`
+4. **Open Graph**: Add OG image for social sharing
 
 ## Monitoring
 

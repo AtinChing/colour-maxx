@@ -241,15 +241,14 @@ As specified in the prompt, these features are intentionally omitted but easy to
    - Would require backend for real comparison
    - Honest approach: only show achievable metrics
 
-3. **Streak Persistence**  
-   - No localStorage tracking
-   - Game state resets on reload
-   - Commented hooks in code for future addition
+3. **Formal Test Runner**
+   - Inline assertions cover the scoring engine
+   - Build and lint pass
+   - Storage and UI flows should still get Vitest/Jest coverage
 
-4. **Complete Official Word Lists**
-   - Using representative subset (~500 words)
-   - Clear TODO comments for replacement
-   - Easy swap-in design
+4. **Offline/PWA Support**
+   - App is client-side after load
+   - Not yet installable or available offline on first visit
 
 ---
 

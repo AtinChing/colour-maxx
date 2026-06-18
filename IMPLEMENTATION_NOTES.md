@@ -20,6 +20,7 @@ colour-maxx/
 │   └── Toast.tsx             # Toast notifications
 ├── lib/
 │   ├── game-logic.ts         # Core scoring engine with unit tests
+│   ├── storage.ts            # localStorage sessions and daily stats
 │   └── wordlists.ts          # Guessable words and answers
 ├── README.md                 # User-facing documentation
 ├── DEPLOYMENT.md             # Deployment instructions
@@ -92,10 +93,11 @@ Tests run during build, assertions visible in build output.
 
 - Two states: normal completion vs loss (hit answer)
 - Stats display: Score, PAR, Percent of PAR
+- Daily stats display for daily games
 - Answer reveal
 - Emoji grid recap (🟩🟨⬛)
 - Copy results button with clipboard API
-- Play Again button (reloads page)
+- New Practice button for another round
 
 ### Toast (components/Toast.tsx)
 
@@ -109,6 +111,7 @@ Tests run during build, assertions visible in build output.
 ### State Management
 
 All game state in React useState:
+- `session`: Current daily, archive, or practice session
 - `answer`: Daily answer (uppercase)
 - `par`: Computed theoretical maximum
 - `guesses`: Array of completed guess tiles
@@ -119,10 +122,11 @@ All game state in React useState:
 - `greensSeen`, `yellowsSeen`: Sets of scored (letter, position) pairs
 - `keyboardState`: Map of letter to best-known state
 - `toast`, `shake`, `revealingRow`: UI state
+- `stats`: Daily games played, avoided-answer count, streaks, and score totals
 
 ### Game Flow
 
-1. Load: Pick daily answer, compute PAR
+1. Load: Resume the active saved session, or start today's daily game
 2. Player types: Update currentGuess
 3. Player presses Enter:
    - Validate: length, in word list, not used
@@ -131,6 +135,13 @@ All game state in React useState:
    - Update: keyboard state, score, seen pairs
    - Check: is answer? (loss) or 6 guesses used? (won)
 4. Game over: Show modal with stats and share
+5. Player can switch to Daily, Archive, or New Practice
+
+### Game Modes
+
+- **Daily**: Deterministic shared answer for the current date. Daily progress and daily stats persist in localStorage.
+- **Archive**: Deterministic answer for the selected date. Each archive date uses its own saved board.
+- **Practice**: Fresh seeded practice session created on demand. Practice sessions are saved as independent active games.
 
 ### Keyboard Handling
 
@@ -227,25 +238,10 @@ Adjusted for letter multiplicities in answer.
 
 ### Current Status
 
-- **GUESSABLE_WORDS**: ~500 words (representative subset)
-- **ANSWER_WORDS**: ~400 words (representative subset)
+- **GUESSABLE_WORDS**: 12,972+ valid guesses from the complete guess list
+- **ANSWER_WORDS**: 2,315 curated daily answer words
 
-### TODO: Replace with Official Lists
-
-```typescript
-// Get from: https://github.com/tabatkins/wordle-list
-// or extract from Wordle source
-
-export const GUESSABLE_WORDS = new Set([
-  // ~12,900 words total
-]);
-
-export const ANSWER_WORDS = [
-  // ~2,300 words total
-];
-```
-
-Word lists are clearly marked with TODO comments for easy replacement.
+The lists are loaded from `lib/words-guessable.ts` and `lib/words-answers.ts`, then exported through `lib/wordlists.ts`.
 
 ## What Was NOT Implemented (Deferred)
 
@@ -264,18 +260,16 @@ Word lists are clearly marked with TODO comments for easy replacement.
 - Would need: database, API, daily score aggregation
 - Privacy considerations: anonymous or account-based
 
-### 3. Streak Persistence
+### 3. Formal Test Runner
 
-- No localStorage or session tracking
-- Game state resets on page reload
-- Would need: localStorage with daily streak counter
-- Hooks ready in code (commented TODO markers)
+- The scoring engine still uses inline assertions
+- Build and lint pass, but there is no Vitest/Jest suite yet
+- Storage migration and UI flows would benefit from automated tests
 
-### 4. Complete Word Lists
+### 4. Offline/PWA Support
 
-- Using subset for demo purposes
-- Full lists available from public sources
-- Swap-in design: just replace arrays in wordlists.ts
+- The app works client-side after load
+- It is not yet installable or available offline on first visit
 
 ## Code Quality Highlights
 
@@ -374,7 +368,6 @@ Verified on:
 
 ### Gameplay
 - Hard mode (must use revealed greens/yellows)
-- Practice mode (play older dates)
 - Custom answer mode (share link with encoded answer)
 - Hint system (show PAR for each guess)
 
@@ -396,9 +389,9 @@ Verified on:
 ## Known Limitations
 
 1. **PAR is approximate**: Not true maximum (by design)
-2. **Word lists incomplete**: Using subset (easy to fix)
+2. **No global comparisons**: Percentiles and leaderboards require a backend
 3. **No offline support**: Needs network for initial load (could add PWA)
-4. **No streak tracking**: State not persisted (easy to add)
+4. **No formal test runner**: Inline assertions exist, but storage/UI flows need proper tests
 5. **Single language**: English only (could internationalize)
 
 ## Compliance with Prompt
@@ -420,7 +413,7 @@ Verified on:
 ✅ PAR computation (upper bound, clearly documented)
 ✅ Percent of PAR shown
 ✅ No fake data (no fabricated percentiles)
-✅ Wordle word lists (with TODO for official lists)
+✅ Complete Wordle word lists
 ✅ Daily answer (deterministic seed)
 ✅ Wordle visual aesthetic (grid, tiles, colours, gaps)
 ✅ Tile flip animation, sequential left-to-right
@@ -434,6 +427,8 @@ Verified on:
 ✅ Input validation with shake and toast
 ✅ End screen with score, PAR, percent, answer, grid recap
 ✅ Wordle-style shareable emoji grid with copy button
+✅ Daily, archive, and practice modes
+✅ localStorage session resume and daily stats
 ✅ Clean, well-commented code
 ✅ Inline unit tests for scoring engine
 ✅ No em dashes in UI text
@@ -464,7 +459,7 @@ Game is fully functional and playable immediately.
 
 Complete implementation of Colour Maxx Edition as specified. The game is production-ready, performant, accessible, and maintainable. All core mechanics work correctly, visual design matches Wordle, and code is clean with inline documentation.
 
-Deferred features (true optimum solver, global leaderboard, streak persistence) are clearly documented and designed to be easy future additions. The scope was executed honestly without fake data or feature bloat.
+Deferred features (true optimum solver, global leaderboard, formal test runner, and PWA support) are clearly documented and designed to be easy future additions. The scope was executed honestly without fake data or feature bloat.
 
 The emergent strategy (maximize colour while avoiding answer) creates genuine read-the-board tension and makes each guess meaningful. With only 6 guesses and imperfect knowledge, players face real risk/reward decisions.
 

@@ -1,24 +1,38 @@
 'use client';
 
+import { useRef } from 'react';
+import { useFocusTrap } from '@/lib/use-focus-trap';
+
 interface RulesModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function RulesModal({ isOpen, onClose }: RulesModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-[#121213] rounded-lg p-6 max-w-md w-full shadow-2xl border-2 border-gray-300 dark:border-gray-700">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rules-title"
+        tabIndex={-1}
+        className="bg-white dark:bg-[#121213] rounded-lg p-6 max-w-md w-full shadow-2xl border-2 border-gray-300 dark:border-gray-700"
+      >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h2 id="rules-title" className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             How to Play
           </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
+            aria-label="Close rules"
           >
             ×
           </button>

@@ -1,6 +1,7 @@
 import { type Tile } from '@/lib/game-logic';
 import { type GameSession, type LocalStats } from '@/lib/storage';
-import { useState } from 'react';
+import { useFocusTrap } from '@/lib/use-focus-trap';
+import { useRef, useState } from 'react';
 
 interface EndModalProps {
   gameState: 'won' | 'lost';
@@ -26,6 +27,8 @@ export default function EndModal({
   onNewPractice,
 }: EndModalProps) {
   const [copied, setCopied] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
 
   const generateShareText = () => {
     const label = session?.mode === 'practice'
@@ -73,19 +76,26 @@ export default function EndModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-[#121213] rounded-lg p-6 max-w-sm w-full shadow-2xl border-2 border-gray-300 dark:border-gray-700">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="result-title"
+        tabIndex={-1}
+        className="bg-white dark:bg-[#121213] rounded-lg p-6 max-w-sm w-full shadow-2xl border-2 border-gray-300 dark:border-gray-700"
+      >
         {/* Header */}
         <div className="text-center mb-4">
           {isLoss ? (
             <>
-              <h2 className="text-2xl font-bold text-red-600 dark:text-red-500 mb-2">
+              <h2 id="result-title" className="text-2xl font-bold text-red-600 dark:text-red-500 mb-2">
                 You typed the answer.
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">Game over.</p>
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              <h2 id="result-title" className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Game Complete
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">

@@ -246,10 +246,6 @@ As specified in the prompt, these features are intentionally omitted but easy to
    - Build and lint pass
    - Storage and UI flows should still get Vitest/Jest coverage
 
-4. **Offline/PWA Support**
-   - App is client-side after load
-   - Not yet installable or available offline on first visit
-
 ---
 
 ## 🎯 Success Criteria Met
@@ -259,6 +255,8 @@ As specified in the prompt, these features are intentionally omitted but easy to
 ✅ **Strategic**: Once-per-pair rules create meaningful decisions  
 ✅ **Honest**: No fabricated data or fake metrics  
 ✅ **Polished**: Animations, mobile support, dark mode  
+✅ **Installable**: Manifest, icons, service worker, and offline fallback  
+✅ **Accessible**: Dialog focus traps, live regions, reduced motion, and colorblind labels  
 ✅ **Documented**: Clear README and technical docs  
 ✅ **Maintainable**: Clean code, easy to customize  
 ✅ **Production-Ready**: Can deploy immediately  

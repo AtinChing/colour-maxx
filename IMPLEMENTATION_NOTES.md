@@ -16,6 +16,7 @@ colour-maxx/
 ├── components/
 │   ├── GameGrid.tsx          # 6x5 tile grid with flip animations
 │   ├── Keyboard.tsx          # QWERTY keyboard with state colours
+│   ├── ServiceWorkerRegistration.tsx # PWA service worker registration
 │   ├── EndModal.tsx          # Game over modal with share functionality
 │   └── Toast.tsx             # Toast notifications
 ├── lib/
@@ -185,6 +186,20 @@ All game state in React useState:
 - Tailwind dark: variants on all components
 - Proper contrast ratios maintained
 
+### Reduced Motion
+
+- `prefers-reduced-motion` disables tile flips, shake, pop, toast, and score ping animations
+- Focus outlines are visible for keyboard navigation across buttons, inputs, and dialogs
+
+## PWA and Offline Support
+
+- `public/manifest.webmanifest` defines install metadata, theme colour, start URL, and app icons
+- `public/icons/icon.svg` and `public/icons/maskable-icon.svg` provide install icons
+- `public/sw.js` caches the app shell, manifest, icons, and same-origin runtime assets
+- Navigation requests use a network-first strategy with cached app fallback
+- Static assets use stale-while-revalidate caching
+- `components/ServiceWorkerRegistration.tsx` registers the worker in the browser as an enhancement
+
 ## Scoring Engine Deep Dive
 
 ### Anti-Spam Rules (Core Game Mechanic)
@@ -266,11 +281,6 @@ The lists are loaded from `lib/words-guessable.ts` and `lib/words-answers.ts`, t
 - Build and lint pass, but there is no Vitest/Jest suite yet
 - Storage migration and UI flows would benefit from automated tests
 
-### 4. Offline/PWA Support
-
-- The app works client-side after load
-- It is not yet installable or available offline on first visit
-
 ## Code Quality Highlights
 
 ### TypeScript Strictness
@@ -298,10 +308,13 @@ The lists are loaded from `lib/words-guessable.ts` and `lib/words-answers.ts`, t
 ### Accessibility
 
 - Keyboard navigation works
-- Semantic HTML where possible
+- Semantic HTML for main content, board grid, rows, cells, dialogs, and keyboard controls
 - Color contrast ratios meet WCAG AA
-- Toast notifications for screen readers
-- Focus management (keyboard vs mouse)
+- Toast notifications and guess results announce through live regions
+- Modal focus is trapped while dialogs are open
+- Rules can be closed with Escape
+- Tile state letters supplement colour for colorblind play
+- Reduced-motion mode respects OS settings
 
 ### Mobile First
 
@@ -383,16 +396,14 @@ Verified on:
 
 ### Accessibility
 - High contrast mode
-- Screen reader improvements
 - Keyboard shortcut hints
 
 ## Known Limitations
 
 1. **PAR is approximate**: Not true maximum (by design)
 2. **No global comparisons**: Percentiles and leaderboards require a backend
-3. **No offline support**: Needs network for initial load (could add PWA)
-4. **No formal test runner**: Inline assertions exist, but storage/UI flows need proper tests
-5. **Single language**: English only (could internationalize)
+3. **No formal test runner**: Inline assertions exist, but storage/UI flows need proper tests
+4. **Single language**: English only (could internationalize)
 
 ## Compliance with Prompt
 
@@ -429,6 +440,8 @@ Verified on:
 ✅ Wordle-style shareable emoji grid with copy button
 ✅ Daily, archive, and practice modes
 ✅ localStorage session resume and daily stats
+✅ PWA manifest, app icons, service worker, and offline fallback
+✅ Accessibility support for modals, grid semantics, live regions, reduced motion, and colorblind labels
 ✅ Clean, well-commented code
 ✅ Inline unit tests for scoring engine
 ✅ No em dashes in UI text
@@ -459,7 +472,7 @@ Game is fully functional and playable immediately.
 
 Complete implementation of Colour Maxx Edition as specified. The game is production-ready, performant, accessible, and maintainable. All core mechanics work correctly, visual design matches Wordle, and code is clean with inline documentation.
 
-Deferred features (true optimum solver, global leaderboard, formal test runner, and PWA support) are clearly documented and designed to be easy future additions. The scope was executed honestly without fake data or feature bloat.
+Deferred features (true optimum solver, global leaderboard, and formal test runner) are clearly documented and designed to be easy future additions. The scope was executed honestly without fake data or feature bloat.
 
 The emergent strategy (maximize colour while avoiding answer) creates genuine read-the-board tension and makes each guess meaningful. With only 6 guesses and imperfect knowledge, players face real risk/reward decisions.
 

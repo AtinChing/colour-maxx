@@ -59,6 +59,10 @@ This creates an `out/` directory with static HTML/CSS/JS that can be hosted anyw
 
 None required! The game runs entirely client-side with no backend dependencies.
 
+## PWA Support
+
+The app includes a web app manifest, install icons, and a service worker. After a successful first load, the service worker caches the app shell and same-origin assets so the game can reopen offline with the cached experience.
+
 ## Browser Support
 
 - Modern browsers with ES6+ support

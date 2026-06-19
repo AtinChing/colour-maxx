@@ -125,6 +125,20 @@ colour-maxx/
 - Turn counter
 - Mobile-first responsive design
 
+✅ **Offline & Install Support**
+- Web app manifest with install metadata
+- App icons for standard and maskable install surfaces
+- Service worker caches the app shell and fetched same-origin assets
+- Offline fallback to the cached game after first successful load
+
+✅ **Accessibility**
+- Dialog roles and keyboard focus trapping for modals
+- Escape-to-close support for rules
+- Screen-reader announcements for toasts and submitted guess results
+- Grid, row, cell, and keyboard button labels
+- Visible focus outlines and reduced-motion support
+- Tile state letters for colorblind play
+
 ## Customization
 
 ### Word Lists
@@ -156,8 +170,6 @@ The following features are intentionally omitted from v1 but designed to be easy
 2. **Global Percentile/Leaderboard** - No fake distribution data. Real comparison requires a backend to collect scores.
 
 3. **Formal Test Runner** - Core logic has inline assertions and the app passes build/lint, but there is not yet a Vitest/Jest suite.
-
-4. **Offline/PWA Support** - The app runs client-side after load, but it is not packaged as an installable offline app.
 
 ## Code Quality Notes
 

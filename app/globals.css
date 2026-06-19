@@ -25,6 +25,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
 /* Tile flip animation */
 @keyframes flip {
   0% {
@@ -139,4 +146,24 @@ body {
 
 .animate-ping-once {
   animation: ping-once 600ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
+  .animate-shake,
+  .animate-pop,
+  .animate-toast,
+  .animate-ping-once,
+  .tile-flip,
+  .tile-flip::before {
+    animation: none !important;
+  }
 }

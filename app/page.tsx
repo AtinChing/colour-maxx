@@ -56,6 +56,7 @@ export default function Home() {
   const [stats, setStats] = useState<LocalStats>(EMPTY_STATS);
   const [hasLoadedSavedGame, setHasLoadedSavedGame] = useState(false);
   const [archiveDate, setArchiveDate] = useState(getDateInputValue());
+  const [statusMessage, setStatusMessage] = useState('');
 
   const applySession = useCallback((nextSession: GameSession, useSavedGame = true) => {
     const nextAnswer = getAnswerForSession(ANSWER_WORDS, nextSession);
@@ -69,6 +70,7 @@ export default function Home() {
     setRevealingRow(-1);
     setShake(false);
     setToast(null);
+    setStatusMessage(`${nextSession.label} game loaded.`);
 
     if (nextSession.mode !== 'practice') {
       setArchiveDate(getDateInputValue(getDateFromDailyKey(nextSession.dailyKey)));
@@ -222,6 +224,8 @@ export default function Home() {
         if (result.scoreGained > 0) {
           setScore(prev => prev + result.scoreGained);
         }
+
+        setStatusMessage(getGuessAnnouncement(upperGuess, result.tiles, result.scoreGained));
         
         // Check if hit the answer (loss condition)
         if (result.isAnswer) {
@@ -282,7 +286,7 @@ export default function Home() {
   const startArchive = () => applySession(createArchiveSession(archiveDate));
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#121213] flex flex-col items-center justify-between py-4 px-2 transition-colors">
+    <main className="min-h-screen bg-white dark:bg-[#121213] flex flex-col items-center justify-between py-4 px-2 transition-colors">
       {/* Header */}
       <div className="w-full max-w-md">
         <div className="flex items-center justify-between mb-4">
@@ -322,6 +326,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={startDaily}
+              aria-pressed={session?.mode === 'daily'}
               className={`h-10 rounded font-bold text-sm border-2 transition-colors ${
                 session?.mode === 'daily'
                   ? 'bg-[#6aaa64] border-[#6aaa64] text-white'
@@ -332,6 +337,8 @@ export default function Home() {
             </button>
             <button
               onClick={startPractice}
+              aria-label="Start a new practice game"
+              aria-pressed={session?.mode === 'practice'}
               className={`h-10 rounded font-bold text-sm border-2 transition-colors ${
                 session?.mode === 'practice'
                   ? 'bg-[#6aaa64] border-[#6aaa64] text-white'
@@ -352,6 +359,7 @@ export default function Home() {
             />
             <button
               onClick={startArchive}
+              aria-pressed={session?.mode === 'archive'}
               className={`h-10 px-4 rounded font-bold text-sm border-2 transition-colors ${
                 session?.mode === 'archive'
                   ? 'bg-[#6aaa64] border-[#6aaa64] text-white'
@@ -365,10 +373,10 @@ export default function Home() {
 
         {/* Stats bar */}
         <div className="flex justify-between items-center mb-4 px-2">
-          <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+          <div className="text-lg font-bold text-gray-900 dark:text-gray-100" aria-live="polite">
             Colour: <span className="text-green-600 dark:text-green-500">{score}</span>
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-gray-600 dark:text-gray-400" aria-live="polite">
             {session?.label ?? 'Daily'} | {turnsRemaining} {turnsRemaining === 1 ? 'turn' : 'turns'} left
           </div>
         </div>
@@ -393,6 +401,10 @@ export default function Home() {
       {/* Toast notifications */}
       {toast && <Toast message={toast.message} />}
 
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {statusMessage}
+      </div>
+
       {/* End modal */}
       {gameState !== 'playing' && (
         <EndModal
@@ -413,6 +425,14 @@ export default function Home() {
         isOpen={rulesModalOpen}
         onClose={() => setRulesModalOpen(false)}
       />
-    </div>
+    </main>
   );
+}
+
+function getGuessAnnouncement(guess: string, tiles: Tile[], scoreGained: number): string {
+  const summary = tiles
+    .map((tile, index) => `position ${index + 1} ${tile.letter} ${tile.state}`)
+    .join(', ');
+
+  return `${guess} submitted. ${summary}. ${scoreGained} points gained.`;
 }

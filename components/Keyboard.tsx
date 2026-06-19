@@ -27,7 +27,7 @@ export default function Keyboard({ onKeyPress, keyboardState }: KeyboardProps) {
   };
 
   return (
-    <div className="flex flex-col gap-[6px] items-center px-2">
+    <div className="flex flex-col gap-[6px] items-center px-2" role="group" aria-label="On-screen keyboard">
       {KEYBOARD_ROWS.map((row, rowIndex) => (
         <div key={rowIndex} className="flex gap-[6px] w-full justify-center">
           {row.map((key) => {
@@ -38,6 +38,7 @@ export default function Keyboard({ onKeyPress, keyboardState }: KeyboardProps) {
               <button
                 key={key}
                 onClick={() => onKeyPress(key)}
+                aria-label={getKeyAriaLabel(key, keyboardState.get(key))}
                 className={`
                   ${isSpecial ? 'px-3 text-xs' : 'w-[43px]'}
                   h-[58px] rounded font-bold uppercase transition-colors
@@ -53,4 +54,14 @@ export default function Keyboard({ onKeyPress, keyboardState }: KeyboardProps) {
       ))}
     </div>
   );
+}
+
+function getKeyAriaLabel(key: string, state?: TileState): string {
+  const label = key === 'BACKSPACE' ? 'Backspace' : key === 'ENTER' ? 'Enter' : `Letter ${key}`;
+
+  if (!state || state === 'empty' || state === 'filled') {
+    return label;
+  }
+
+  return `${label}, ${state}`;
 }

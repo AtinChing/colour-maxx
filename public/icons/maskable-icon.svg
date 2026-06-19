@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Colour Maxx maskable icon</title>
+  <rect width="512" height="512" fill="#6aaa64"/>
+  <rect x="96" y="96" width="320" height="320" rx="56" fill="#121213"/>
+  <rect x="126" y="126" width="76" height="76" rx="8" fill="#6aaa64"/>
+  <rect x="218" y="126" width="76" height="76" rx="8" fill="#c9b458"/>
+  <rect x="310" y="126" width="76" height="76" rx="8" fill="#787c7e"/>
+  <rect x="126" y="218" width="76" height="76" rx="8" fill="#c9b458"/>
+  <rect x="218" y="218" width="76" height="76" rx="8" fill="#6aaa64"/>
+  <rect x="310" y="218" width="76" height="76" rx="8" fill="#c9b458"/>
+  <rect x="126" y="310" width="76" height="76" rx="8" fill="#787c7e"/>
+  <rect x="218" y="310" width="76" height="76" rx="8" fill="#c9b458"/>
+  <rect x="310" y="310" width="76" height="76" rx="8" fill="#6aaa64"/>
+</svg>

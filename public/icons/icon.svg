@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Colour Maxx icon</title>
+  <rect width="512" height="512" rx="96" fill="#121213"/>
+  <rect x="72" y="72" width="108" height="108" rx="10" fill="#6aaa64"/>
+  <rect x="202" y="72" width="108" height="108" rx="10" fill="#c9b458"/>
+  <rect x="332" y="72" width="108" height="108" rx="10" fill="#787c7e"/>
+  <rect x="72" y="202" width="108" height="108" rx="10" fill="#c9b458"/>
+  <rect x="202" y="202" width="108" height="108" rx="10" fill="#6aaa64"/>
+  <rect x="332" y="202" width="108" height="108" rx="10" fill="#c9b458"/>
+  <rect x="72" y="332" width="108" height="108" rx="10" fill="#787c7e"/>
+  <rect x="202" y="332" width="108" height="108" rx="10" fill="#c9b458"/>
+  <rect x="332" y="332" width="108" height="108" rx="10" fill="#6aaa64"/>
+  <path d="M123 141h24v-30h-24zm134 0h24v-30h-24zm130 0h24v-30h-24zm-260 130h24v-30h-24zm130 0h24v-30h-24zm130 0h24v-30h-24zm-260 130h24v-30h-24zm130 0h24v-30h-24zm130 0h24v-30h-24z" fill="#ffffff"/>
+</svg>
